@@ -68,6 +68,16 @@ Een collectie zit vol dingen die geen setmateriaal zijn. Sluit uit voordat je ga
 
 Bij modus 2 mik je op een **coherente, niet te grote pool** en kies je daaruit het aantal tracks dat bij de gevraagde duur past (reken ~vol uitgespeeld; een echte set draait tracks korter, dus geef zowel het aantal als een geschatte mix-duur). Liever een strakke set van 15 sterke tracks dan 40 die half botsen.
 
+### Deep cuts & variatie (niet alleen de grote namen)
+
+Publiek vindt het juist leuk als er **minder bekende tracks** tussendoor komen — pro's in dit genre strooien bewust deep cuts en producer-picks door hun sets, het is geen anthem-festival. Bouw daarom de pool **breed** (op genre/BPM/key), niet alleen op een handvol scene-namen, en zorg actief voor variatie:
+
+- **Cap per artiest:** maximaal ~2 tracks van dezelfde artiest in één set (eigen-edit-runs van een pro daargelaten als de gebruiker dat expliciet wil).
+- **Quotum deep cuts:** mik op ~30–40% **minder bekende** tracks. Offline-proxy voor "minder bekend": de artiest heeft **weinig tracks in de collectie** (bouw een `Artist -> aantal`-telling), **geen rating**, **lage of geen `PlayCount`**, en staat niet in het rijtje headline scene-namen. Meng die met herkenbare ankers.
+- Online (niveau 3): een track die zelden in pro-tracklists opduikt is een deep cut.
+
+Meld kort welke verrassingen/deep cuts erin zitten, zodat de gebruiker ze herkent.
+
 ## 2. Verrijk elke track
 
 **Key naar Camelot.** Zet `Tonality` om naar een Camelot-code voor harmonisch mixen:
@@ -110,12 +120,12 @@ Maar onthoud waaróm dit een gids is en geen regel: key botst alleen **tijdens d
 
 **b) BPM-progressie.** Houd beatmixbare overgangen binnen ongeveer ±3 tot 4% (een paar BPM). De klim over de set is **stapsgewijs en gepunctueerd**, niet kaarsrecht: spring een sectie omhoog, zak dan terug om te ademen. Grote sprongen zijn een bewuste **gear-shift** tussen secties (leg ze over een breakdown of harde cut), en een plotse hoge **curveball** kan bewust voor shock. Genre-BPM-banden: zie [sectie 7](#7-genre-specifiek-trance--hard-house--house).
 
-**c) Energiecurve — denk in golven, niet één boog.** Kies een archetype:
-- **Warm-up / opening:** start lager (~60-70% van de piek) met kop-ruimte, groovier, bouw gestaag op. (NB: in hard trance/hard house openen DJ's juist al hóóg — zie sectie 7.)
-- **Peak-time:** golven van tension & release. Loop op naar 8-10, maar **wissel pieken af met valleien** (breakdown -> build -> drop). De valleien maken de pieken; **zet nooit drie volle anthems op rij**, anders leest niks meer als piek.
-- **Closing:** of vasthouden op hoog en eindigen op een **anthem one-two** (herkenbare classic/vocal in de laatste 1-2 slots), of bewust afbouwen (~2-3 BPM per overgang zachter). Maak het einde doelbewust, niet abrupt.
+**c) Energiecurve — kies de vorm op basis van de setlengte.** Uit echte sets (Gigola, KI/KI, Tjade) blijkt: **de boog hangt af van hoe lang je speelt**, niet van het genre.
+- **Korte set (~45–75 min, Boiler Room / festival-peak):** `relentless` / peak-time. Open al hóóg en blijf hoog — nauwelijks warm-up of afbouw, alleen ondiepe dipjes om te ademen. Dit is voor dit genre de **standaard** bij een uurtje. Eindig op een **anthem one-two**.
+- **Lange set (90 min+):** een echte boog in golven. **Warm-up:** start lager (~60-70% van de piek) met kop-ruimte en bouw op. **Peak-time:** golven van tension & release (breakdown -> build -> drop). **Closing:** vasthouden op hoog en anthem-finale, of bewust afbouwen (~2-3 BPM per overgang).
+- **Altijd:** **wissel pieken af met valleien** en **zet nooit drie volle anthems op rij**, anders leest niks meer als piek. De valleien maken de pieken.
 
-Bepaal per positie een doelenergie en beloon tracks die daar dichtbij zitten — maar laat de curve golven (zie de `wave`-vorm in het script).
+Bepaal per positie een doelenergie en beloon tracks die daar dichtbij zitten. Vormen in het script: `relentless` (kort/hard), `wave` (lange dynamische set), `warmup`, `closing`, `peak`.
 
 **Scoren:** combineer (bijvoorbeeld) **40% afstand tot de doelenergie, 30% BPM-nabijheid, 30% harmonisch** — energie en flow leiden, key is de tiebreaker (de oude 45% harmonisch woog key te zwaar). Straf 3+ opeenvolgende hoog-energetische tracks (forceer een valley). Begin met een passende opener (zie sectie 7 per genre) en kies steeds de best scorende volgende track die nog niet gebruikt is.
 
@@ -151,6 +161,7 @@ De duurzame kennis over hoe sets in dit genre (hard trance / hard house / house 
 import xml.etree.ElementTree as ET
 import re
 import math
+from collections import Counter
 
 CAMELOT = {
     "Abm":"1A","G#m":"1A","Ebm":"2A","D#m":"2A","Bbm":"3A","A#m":"3A",
@@ -201,6 +212,8 @@ def target_energy(pos, total, shape="peak"):
     if shape == "closing":  return 9 - 4 * x
     if shape == "wave":                       # stijgende basislijn met golven eroverheen
         return min(10, 4 + 5 * x + 1.5 * math.sin(x * math.pi * 3))
+    if shape == "relentless":                 # kort/hard: hoog plateau, alleen ondiepe dips
+        return min(10, 7.5 + 1.5 * x + 0.8 * math.sin(x * math.pi * 4))
     return 4 + 6 * (1 - abs(0.5 - x) * 2)     # peak-time boog
 
 def is_set_material(tr):
@@ -238,21 +251,26 @@ def load_tracks(xml_path, playlist=None, keep_ids=None, hygiene=True):
         })
     return tracks
 
-def order_set(tracks, shape="peak", w_energy=0.40, w_bpm=0.30, w_harm=0.30):
+def order_set(tracks, shape="peak", w_energy=0.40, w_bpm=0.30, w_harm=0.30,
+              max_per_artist=2):
     # Energie/flow leiden; harmonie is de tiebreaker (niet andersom).
+    # max_per_artist houdt de set gevarieerd (geen handvol grote namen).
     remaining = tracks[:]
-    # opener: laagste energie voor warm-up, anders middenmoot
-    remaining.sort(key=lambda t: (t["energy"] or 5))
+    # opener: laagste energie voor warm-up/wave, anders middenmoot
+    if shape in ("warmup", "wave"):
+        remaining.sort(key=lambda t: (t["energy"] or 5))
     ordered = [remaining.pop(0)]
+    used_artist = Counter([ordered[0]["artist"]])
     total = len(tracks)
     while remaining:
         prev = ordered[-1]
         tgt = target_energy(len(ordered), total, shape)
-        # tel de hoog-energetische tracks die net achter elkaar stonden
-        run = 0
+        run = 0                            # hoog-energetische tracks net achter elkaar
         for t in reversed(ordered):
             if (t["energy"] or 5) >= 8: run += 1
             else: break
+        # respecteer de artiest-cap, tenzij er anders niks overblijft
+        pool = [t for t in remaining if used_artist[t["artist"]] < max_per_artist] or remaining
         def score(t):
             e = t["energy"] or 5
             s = (w_energy * (1 - abs(e - tgt) / 10)
@@ -261,8 +279,9 @@ def order_set(tracks, shape="peak", w_energy=0.40, w_bpm=0.30, w_harm=0.30):
             if run >= 2 and e >= 8:        # forceer een valley na 2 anthems op rij
                 s -= 0.5
             return s
-        nxt = max(remaining, key=score)
+        nxt = max(pool, key=score)
         ordered.append(nxt)
+        used_artist[nxt["artist"]] += 1
         remaining.remove(nxt)
     return ordered
 ```

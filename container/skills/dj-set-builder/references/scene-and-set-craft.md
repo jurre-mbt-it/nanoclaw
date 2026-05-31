@@ -85,3 +85,20 @@ Gedestilleerde domeinkennis voor het bouwen van sets in de moderne (Duitse/Europ
 - HarmonySet — set energy flow: https://www.harmonyset.com/guides/dj-set-energy-flow
 
 > Caveat: 1001tracklists zelf is bot-geblokkeerd voor automatische fetch; set-analyses kwamen via set79.com en publiceren geen per-track BPM/key (BPM-arcs zijn afgeleid uit set-framing). De namen en patronen kloppen; exacte cijfers zijn richtlijnen.
+
+## 11. Setlengte bepaalt de structuur (uit echte sets)
+
+Analyse van echte, openbare sets van Gigola, KI/KI en Tjade geeft één duidelijke regel: **de boog hangt af van de slotlengte, niet van de DJ.**
+
+- **Korte slots (~50–60 min, Boiler Room / festival peak):** relentless, vanaf het begin hoog, nauwelijks warm-up of afbouw. Voor een set van ~60–70 min is een **vlak-hoog / peak-time** profiel dus correcter dan een uitgesproken opbouw. Gebruik `shape="relentless"` (of `peak` met een hoge basislijn).
+- **Lange sets (90 min – 3 uur):** echte warm-up → build → peak → afbouw, in golven. Gebruik `shape="wave"`/`warmup`/`closing` naar het deel van de avond.
+- Alle drie **openen hoog** in korte slots (KI/KI vaak op een trance-anthem als koude start) en strooien **deep cuts / producer-picks** door de hele set — het is nadrukkelijk géén anthem-festival. Verrassingen zijn kern, geen uitzondering.
+- Correctie: **Tjade is Nederlands** (Amsterdam), niet Duits. Directe peers/lane: Kyle Starkey, Dart, S3PPA, Marlon Hoffstadt (DJ Daddy Trance), KI/KI.
+
+### Deep cuts (minder bekende tracks bewust meenemen)
+Publiek vindt het juist leuk als er onbekender materiaal tussendoor komt. Leun niet op een handvol scene-namen: bouw de pool **breed** (genre/BPM/key), **cap het aantal tracks per artiest** (~max 2), en reserveer een **quotum deep cuts** (~30–40%). Offline-proxy voor "minder bekend": artiest heeft weinig tracks in de collectie, geen rating, lage/geen `PlayCount`, en is geen headline scene-naam. Online (niveau 3): een track die zelden in pro-tracklists opduikt is een deep cut. Meng herkenbare ankers mét verrassingen.
+
+### Echte sets om naar te luisteren (open beschikbaar)
+- DJ Gigola — The Lot Radio 2024: https://www.youtube.com/watch?v=59EwSSJiAZw · Awakenings 2025: https://www.youtube.com/watch?v=XG_34UOwRTg · Boiler Room Berlin 2022: https://www.youtube.com/watch?v=9gVo7Sq0btI
+- KI/KI — RA.933 (boog): https://soundcloud.com/resident-advisor/ra933-kiki · Boiler Room AVA 2024 (relentless): https://www.youtube.com/watch?v=obByzP5X3mc · 5HRS OF ACID: https://set79.com/tracklist/soundcloud.com/ki_slash_ki/kiki-pres-5hrs-of-acid-at-warehouse-elementenstraat
+- Tjade — Wildeburg 2025 (~3u, volledige boog): https://soundcloud.com/tjadedj/tjade-sunset-at-wildeburg-2025 · Soenda 2024: https://www.youtube.com/watch?v=jwW8RAvHPqc · Boiler Room Amsterdam (relentless): https://soundcloud.com/platform/tjade-amsterdam
