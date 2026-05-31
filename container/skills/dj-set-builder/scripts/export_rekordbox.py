@@ -35,6 +35,7 @@ import argparse
 import copy
 import json
 import os
+import sqlite3
 import sys
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -68,17 +69,28 @@ def location_to_path(loc: str | None) -> str | None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--source", required=True, help="source rekordbox collection XML")
+    ap.add_argument("--source", help="source rekordbox collection XML")
+    ap.add_argument("--db", help="library.py index DB to read tracks from (instead of --source)")
     ap.add_argument("--ids", help="comma-separated TrackIDs in play order")
     ap.add_argument("--ids-file", help="file with ordered TrackIDs (lines or JSON array)")
     ap.add_argument("--name", required=True, help="playlist name to create")
     ap.add_argument("--out", required=True, help="output basename (no extension)")
     args = ap.parse_args()
+    if not args.source and not args.db:
+        sys.exit("Provide --source (XML) or --db (library index)")
 
     ids = load_ids(args)
-    src_root = ET.parse(args.source).getroot()
-    src_col = src_root.find("COLLECTION")
-    by_id = {t.get("TrackID"): t for t in src_col.iter("TRACK")}
+    # by_id maps TrackID -> verbatim <TRACK> element (with beatgrid + cues).
+    if args.db:
+        con = sqlite3.connect(args.db)
+        by_id = {tid: ET.fromstring(blob)
+                 for tid, blob in con.execute("SELECT track_id, xml_blob FROM tracks")}
+        con.close()
+        product = None
+    else:
+        src_root = ET.parse(args.source).getroot()
+        by_id = {t.get("TrackID"): t for t in src_root.find("COLLECTION").iter("TRACK")}
+        product = src_root.find("PRODUCT")
 
     missing = [i for i in ids if i not in by_id]
     if missing:
@@ -90,7 +102,6 @@ def main() -> None:
 
     # --- build rekordbox XML ---
     dj = ET.Element("DJ_PLAYLISTS", {"Version": "1.0.0"})
-    product = src_root.find("PRODUCT")
     dj.append(copy.deepcopy(product) if product is not None else
               ET.Element("PRODUCT", {"Name": "rekordbox", "Company": "AlphaTheta"}))
 

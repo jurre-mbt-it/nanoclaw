@@ -78,6 +78,32 @@ Publiek vindt het juist leuk als er **minder bekende tracks** tussendoor komen �
 
 Meld kort welke verrassingen/deep cuts erin zitten, zodat de gebruiker ze herkent.
 
+### Token-zuinig werken via de index (aanrader)
+
+Parse niet elke keer de hele XML en dump geen lange tracklijsten in context — dat is traag en duur. Bouw in plaats daarvan **één keer** een vooraf-gecategoriseerde SQLite-index met `scripts/library.py`, en stel sets daarna samen met kleine queries die **alleen de relevante kandidaten** teruggeven.
+
+```bash
+# 1. Index bouwen of bijwerken (idempotent; dedupeert op TrackID)
+python3 scripts/library.py index --db <workspace>/library.db --source <export.xml>
+
+# 2. Overzicht
+python3 scripts/library.py stats --db <workspace>/library.db
+
+# 3. Kandidaten kiezen (alleen matchende rijen komen terug)
+python3 scripts/library.py query --db <workspace>/library.db \
+  --bpm-min 148 --bpm-max 158 --with-key --deep-cuts --limit 40
+#   --band house|trance/groove|hardhouse/trance|hardtrance, --key 8A, --format ids
+```
+
+De index bevat per track de velden die je nodig hebt plus afgeleide categorieën (Camelot, BPM-band, set-material-vlag) en een live **deep-cut**-vlag (artiest ≤2 tracks in de library, geen rating, lage playcount). Bouw de set-volgorde uit de teruggegeven kandidaten (de logica in sectie 6) en exporteer rechtstreeks uit de DB — die bewaart de track-elementen verbatim, dus beatgrids/cues blijven behouden zonder de originele XML:
+
+```bash
+python3 scripts/export_rekordbox.py --db <workspace>/library.db --ids <id1,id2,...> \
+  --name "<set-naam>" --out <basisnaam>
+```
+
+**Nieuwe export toevoegen?** Draai stap 1 opnieuw met de nieuwe `--source`. Bestaande TrackIDs worden ververst, nieuwe tracks toegevoegd — het meldt *new vs already known*, en flagt tracks die onder een ander TrackID dezelfde artiest+titel hebben (mogelijke dubbel). Je vult dus aan i.p.v. alles opnieuw te importeren. Val alleen terug op rechtstreeks XML-parsen (sectie 6) als er geen index is.
+
 ## 2. Verrijk elke track
 
 **Key naar Camelot.** Zet `Tonality` om naar een Camelot-code voor harmonisch mixen:
@@ -329,6 +355,8 @@ python3 scripts/export_rekordbox.py \
   --name "<set-naam>" \
   --out <uitvoer/basisnaam-zonder-extensie>
 ```
+
+In plaats van `--source <xml>` kun je ook `--db <workspace>/library.db` gebruiken (zie sectie 1) — dan leest het script de tracks uit de index, inclusief de verbatim beatgrids/cues, zonder de originele XML.
 
 Geef de `--ids` in **exact de afspeelvolgorde** die je hebt bepaald (komma-gescheiden TrackIDs uit de COLLECTION). Bij veel tracks is `--ids-file` handiger: een bestand met één TrackID per regel, of een JSON-array. Het script schrijft twee bestanden:
 
