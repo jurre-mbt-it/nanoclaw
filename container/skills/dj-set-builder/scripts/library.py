@@ -31,9 +31,11 @@ play count) computed live, so it stays correct as the library grows.
 """
 from __future__ import annotations
 import argparse
+import os
 import re
 import sqlite3
 import sys
+import urllib.parse
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
@@ -78,9 +80,22 @@ def norm(s):
     return re.sub(r"[^a-z0-9]", "", (s or "").lower())
 
 
+def ident_of(artist, name, location, track_id):
+    # Dedup identity = normalized artist+title. rekordbox re-exports churn both
+    # TrackIDs AND file paths (volume renames, folder reorgs), but artist+title
+    # is stable and still distinguishes versions (mix names live in the title).
+    # Fall back to filename, then TrackID, when artist/title are missing.
+    a, t = norm(artist), norm(name)
+    if a or t:
+        return f"at:{a}|{t}"
+    base = os.path.basename(urllib.parse.unquote(location or "").rstrip("/")).lower()
+    return f"f:{base}" if base else f"id:{track_id}"
+
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS tracks (
-  track_id TEXT PRIMARY KEY,
+  ident TEXT PRIMARY KEY,          -- normalized file location (stable id)
+  track_id TEXT,
   name TEXT, artist TEXT, artist_norm TEXT, title_norm TEXT,
   bpm REAL, camelot TEXT, genre TEXT,
   rating INTEGER, play_count INTEGER, total_time INTEGER, year INTEGER,
@@ -91,6 +106,7 @@ CREATE INDEX IF NOT EXISTS idx_bpm ON tracks(bpm);
 CREATE INDEX IF NOT EXISTS idx_band ON tracks(bpm_band);
 CREATE INDEX IF NOT EXISTS idx_artist ON tracks(artist_norm);
 CREATE INDEX IF NOT EXISTS idx_camelot ON tracks(camelot);
+CREATE INDEX IF NOT EXISTS idx_trackid ON tracks(track_id);
 CREATE INDEX IF NOT EXISTS idx_titlenorm ON tracks(artist_norm, title_norm);
 """
 
@@ -98,8 +114,10 @@ CREATE INDEX IF NOT EXISTS idx_titlenorm ON tracks(artist_norm, title_norm);
 def cmd_index(args):
     con = sqlite3.connect(args.db)
     con.executescript(SCHEMA)
+    if args.replace:
+        con.execute("DELETE FROM tracks")
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    new = known = dup_diff_id = 0
+    new = known = moved = 0
     for src in args.source:
         root = ET.parse(src).getroot()
         col = root.find("COLLECTION")
@@ -110,47 +128,41 @@ def cmd_index(args):
             tid = tr.get("TrackID")
             if not tid or tr.get("Name") is None:
                 continue
+            ident = ident_of(tr.get("Artist"), tr.get("Name"), tr.get("Location"), tid)
             bpm = float(tr.get("AverageBpm") or 0) or None
             dur = int(float(tr.get("TotalTime") or 0))
-            an = norm(tr.get("Artist"))
-            tn = norm(tr.get("Name"))
             row = (
-                tid, tr.get("Name"), tr.get("Artist"), an, tn,
+                ident, tid, tr.get("Name"), tr.get("Artist"), norm(tr.get("Artist")), norm(tr.get("Name")),
                 bpm, to_camelot(tr.get("Tonality")), tr.get("Genre"),
                 int(tr.get("Rating") or 0) // 51, int(tr.get("PlayCount") or 0),
                 dur, int(tr.get("Year") or 0) or None,
                 tr.get("Location"), bpm_band(bpm), is_set_material(bpm, dur, tr.get("Location")),
                 src, ET.tostring(tr, encoding="unicode"), now,
             )
-            cur = con.execute("SELECT 1 FROM tracks WHERE track_id=?", (tid,))
-            exists = cur.fetchone() is not None
-            # likely duplicate added under a different TrackID (same artist+title)
-            if not exists and an and tn:
-                d = con.execute(
-                    "SELECT 1 FROM tracks WHERE artist_norm=? AND title_norm=? LIMIT 1",
-                    (an, tn)).fetchone()
-                if d:
-                    dup_diff_id += 1
+            prev = con.execute("SELECT location FROM tracks WHERE ident=?", (ident,)).fetchone()
+            if prev is not None and prev[0] != tr.get("Location"):
+                moved += 1
             con.execute(
-                """INSERT INTO tracks VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                   ON CONFLICT(track_id) DO UPDATE SET
-                     name=excluded.name, artist=excluded.artist, artist_norm=excluded.artist_norm,
-                     title_norm=excluded.title_norm, bpm=excluded.bpm, camelot=excluded.camelot,
-                     genre=excluded.genre, rating=excluded.rating, play_count=excluded.play_count,
+                """INSERT INTO tracks VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                   ON CONFLICT(ident) DO UPDATE SET
+                     track_id=excluded.track_id, name=excluded.name, artist=excluded.artist,
+                     artist_norm=excluded.artist_norm, title_norm=excluded.title_norm,
+                     bpm=excluded.bpm, camelot=excluded.camelot, genre=excluded.genre,
+                     rating=excluded.rating, play_count=excluded.play_count,
                      total_time=excluded.total_time, year=excluded.year, location=excluded.location,
                      bpm_band=excluded.bpm_band, is_set_material=excluded.is_set_material,
                      source_xml=excluded.source_xml, xml_blob=excluded.xml_blob""",
                 row)
-            if exists: known += 1
+            if prev is not None: known += 1
             else: new += 1
     con.commit()
     total = con.execute("SELECT COUNT(*) FROM tracks").fetchone()[0]
     con.close()
-    print(f"indexed {args.source}")
+    print(f"indexed {args.source}" + (" (replace)" if args.replace else ""))
     print(f"  new: {new} | already known (refreshed): {known} | library total: {total}")
-    if dup_diff_id:
-        print(f"  note: {dup_diff_id} new tracks share an artist+title with an existing "
-              f"track under a different TrackID (possible duplicates — kept both)")
+    if moved:
+        print(f"  note: {moved} known tracks had a changed file location (moved/re-exported) "
+              f"— refreshed to the new path")
 
 
 def cmd_stats(args):
@@ -211,6 +223,9 @@ def main():
     p = sub.add_parser("index", help="build/update the index from XML export(s)")
     p.add_argument("--db", required=True)
     p.add_argument("--source", required=True, action="append", help="rekordbox XML (repeatable)")
+    p.add_argument("--replace", action="store_true",
+                   help="clear the index first — use when the XML is your full current library "
+                        "(refreshes everything, drops tracks no longer present)")
     p.set_defaults(func=cmd_index)
 
     p = sub.add_parser("stats", help="summary of the library")

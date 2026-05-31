@@ -83,8 +83,9 @@ Meld kort welke verrassingen/deep cuts erin zitten, zodat de gebruiker ze herken
 Parse niet elke keer de hele XML en dump geen lange tracklijsten in context — dat is traag en duur. Bouw in plaats daarvan **één keer** een vooraf-gecategoriseerde SQLite-index met `scripts/library.py`, en stel sets daarna samen met kleine queries die **alleen de relevante kandidaten** teruggeven.
 
 ```bash
-# 1. Index bouwen of bijwerken (idempotent; dedupeert op TrackID)
-python3 scripts/library.py index --db <workspace>/library.db --source <export.xml>
+# 1. Index bouwen of verversen. Een rekordbox-export is je HELE library, dus
+#    --replace is de normale keuze: schone refresh die ook verwijderde tracks weglaat.
+python3 scripts/library.py index --db <workspace>/library.db --source <export.xml> --replace
 
 # 2. Overzicht
 python3 scripts/library.py stats --db <workspace>/library.db
@@ -102,7 +103,9 @@ python3 scripts/export_rekordbox.py --db <workspace>/library.db --ids <id1,id2,.
   --name "<set-naam>" --out <basisnaam>
 ```
 
-**Nieuwe export toevoegen?** Draai stap 1 opnieuw met de nieuwe `--source`. Bestaande TrackIDs worden ververst, nieuwe tracks toegevoegd — het meldt *new vs already known*, en flagt tracks die onder een ander TrackID dezelfde artiest+titel hebben (mogelijke dubbel). Je vult dus aan i.p.v. alles opnieuw te importeren. Val alleen terug op rechtstreeks XML-parsen (sectie 6) als er geen index is.
+**Nieuwe export toevoegen?** Draai stap 1 opnieuw met de nieuwe `--source`. De dedup-sleutel is **genormaliseerde artiest+titel**, niet TrackID of pad — want rekordbox-her-exports wijzigen vaak álle TrackID's én bestandspaden (volume-rename, mappen-reorg), terwijl artiest+titel stabiel blijft (en mixnamen in de titel onderscheiden versies). Zo herkent het je bestaande nummers ook na een verhuizing, ververst hun pad/ID, en voegt alleen écht nieuwe toe (het meldt *new vs known* en hoeveel er *moved*). Gebruik `--replace` als de XML je volledige huidige library is (normaal geval) zodat verwijderde tracks ook wegvallen; laat 'm weg om meerdere bronnen samen te voegen. Val alleen terug op rechtstreeks XML-parsen (sectie 6) als er geen index is.
+
+> Let op: als je bestandspaden zijn veranderd, wijzen eerder geëxporteerde set/crate-bestanden naar de oude paden en matchen ze niet meer in rekordbox. Ververs de index en **genereer die sets opnieuw** uit de bijgewerkte library.
 
 ## 2. Verrijk elke track
 
