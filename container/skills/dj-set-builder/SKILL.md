@@ -89,37 +89,35 @@ Bij modus 2 mik je op een **coherente, niet te grote pool** en kies je daaruit h
 
 (Als de gebruiker rekordbox op Camelot- of Open Key-weergave heeft staan, kan `Tonality` al een code zijn. Detecteer dat en sla de conversie over.)
 
-**Energie bepalen** (schaal 1 tot 10), in volgorde van betrouwbaarheid:
+**Energie bepalen** (schaal 1 tot 10). **Energie is níét hetzelfde als tempo** — een 150-BPM groovy roller kan láger in energie zitten dan een 145-BPM anthem met een grote breakdown en drop. BPM is snelheid; energie is dansvloer-impact. Behandel ze als aparte assen. In volgorde van betrouwbaarheid:
 1. Expliciet label in `Comments` of MyTag (bv. "energy 8") -> gebruik dat.
 2. Kleurlabel als de gebruiker een vaste conventie heeft -> vraag of leid af.
 3. Niveau 2: bereken uit audio (RMS-loudness + spectral centroid, zie script).
-4. Anders heuristiek: schat op basis van BPM binnen het genre en de rating. Hogere BPM en hogere rating duwen de energie omhoog, maar dit is een grove schatting. Meld dat het een schatting is.
+4. Anders heuristiek: schat, en gebruik daarbij **structuursignalen** naast BPM en rating. Vocal-anthem / grote breakdown / herkenbare hook duwt energie omhoog; tool-track, roller, lange intro of "(Extended/Dub)" duwt 'm omlaag. BPM en rating zijn slechts een zwak duwtje, geen formule. Dit blijft een grove schatting — **meld dat altijd**.
 
 ## 3. Ordeningslogica
 
 Combineer drie krachten in een score per overgang van track A naar track B, en bouw de set greedy of via een korte padzoektocht (zie script).
 
-**a) Harmonisch (Camelot).** Veilige moves vanaf een code (bv. 8A):
-- Zelfde key (8A -> 8A): perfect, gelijke spanning.
-- ±1 zelfde letter (8A -> 7A of 9A): vloeiend, klassieke move.
-- Letter wisselen, zelfde nummer (8A -> 8B): relatieve majeur/mineur, stemmingswissel maar compatibel.
-- +2 zelfde letter (8A -> 10A): energy boost, iets stijgender.
-- +7 (modulatie) is een geavanceerde "lift", spaarzaam gebruiken op een hoogtepunt.
-Alles daarbuiten geeft botsende tonen, vermijd dat tenzij er een harde cut of lange breakdown tussen zit.
+**a) Harmonisch (Camelot) — een zachte tiebreaker, geen wet.** Veilige moves vanaf een code (bv. 8A):
+- Zelfde key (8A -> 8A): naadloos, maar bij overgebruik wordt de set statisch.
+- ±1 zelfde letter (8A -> 7A of 9A): vloeiend, de werkpaard-move.
+- Letter wisselen, zelfde nummer (8A -> 8B): relatieve majeur/mineur, stemmingswissel zonder energiesprong.
+- +2 zelfde letter (8A -> 10A): energy boost (consistenter dan +7; korte overgang).
+- +7 (modulatie) is een sterkere "lift", fragieler — spaarzaam op een hoogtepunt.
 
-**b) BPM-progressie.** Houd overgangen binnen ongeveer ±3 tot 4% (een paar BPM) voor een echte beatmix. Genre-banen als richtlijn:
-- House: ~120 tot 128
-- Trance: ~132 tot 140 (prog trance lager, uplifting rond 138)
-- Hard house: ~145 tot 150
-Laat de BPM over de set geleidelijk oplopen richting peak-time. Grote sprongen alleen bewust inzetten als "gear shift" tussen secties, niet midden in een flow.
+Maar onthoud waaróm dit een gids is en geen regel: key botst alleen **tijdens de overlap/blend**. Bij een **harde cut**, een **lange breakdown**, of een **bass swap (EQ-killed bas)** telt key veel minder — "out of key" mixt dan prima. Eén key-label mist bovendien modulatie, en rekordbox' detectie is ~60% accuraat. Dus: als de júíste track voor het moment niet key-compatibel is, wint die track. Forceer geen saaie set om de Camelot-regel.
 
-**c) Energiecurve.** Kies een archetype op basis van het settype:
-- **Warm-up / opening:** start laag (energie 3 tot 5), groovier, bouw rustig op.
-- **Peak-time:** loop op naar 8 tot 10, grote anthems, vocals, breakdown -> build -> drop afwisselen zodat het ademt.
-- **Closing:** of vasthouden op hoog, of bewust afbouwen.
-Bepaal per positie in de set een doelenergie en beloon tracks die daar dichtbij zitten.
+**b) BPM-progressie.** Houd beatmixbare overgangen binnen ongeveer ±3 tot 4% (een paar BPM). De klim over de set is **stapsgewijs en gepunctueerd**, niet kaarsrecht: spring een sectie omhoog, zak dan terug om te ademen. Grote sprongen zijn een bewuste **gear-shift** tussen secties (leg ze over een breakdown of harde cut), en een plotse hoge **curveball** kan bewust voor shock. Genre-BPM-banden: zie [sectie 7](#7-genre-specifiek-trance--hard-house--house).
 
-**Scoren:** combineer (bijvoorbeeld) 45% harmonisch, 30% BPM-nabijheid, 25% afstand tot de doelenergie op die positie. Begin met een passende opener (lage energie voor warm-up, of een herkenbare intro-track) en kies steeds de best scorende volgende track die nog niet gebruikt is.
+**c) Energiecurve — denk in golven, niet één boog.** Kies een archetype:
+- **Warm-up / opening:** start lager (~60-70% van de piek) met kop-ruimte, groovier, bouw gestaag op. (NB: in hard trance/hard house openen DJ's juist al hóóg — zie sectie 7.)
+- **Peak-time:** golven van tension & release. Loop op naar 8-10, maar **wissel pieken af met valleien** (breakdown -> build -> drop). De valleien maken de pieken; **zet nooit drie volle anthems op rij**, anders leest niks meer als piek.
+- **Closing:** of vasthouden op hoog en eindigen op een **anthem one-two** (herkenbare classic/vocal in de laatste 1-2 slots), of bewust afbouwen (~2-3 BPM per overgang zachter). Maak het einde doelbewust, niet abrupt.
+
+Bepaal per positie een doelenergie en beloon tracks die daar dichtbij zitten — maar laat de curve golven (zie de `wave`-vorm in het script).
+
+**Scoren:** combineer (bijvoorbeeld) **40% afstand tot de doelenergie, 30% BPM-nabijheid, 30% harmonisch** — energie en flow leiden, key is de tiebreaker (de oude 45% harmonisch woog key te zwaar). Straf 3+ opeenvolgende hoog-energetische tracks (forceer een valley). Begin met een passende opener (zie sectie 7 per genre) en kies steeds de best scorende volgende track die nog niet gebruikt is.
 
 ## 4. (Niveau 2) Audioanalyse met librosa
 
@@ -141,15 +139,18 @@ def analyse_audio(path, sr=22050, duration=120, offset=30):
 
 Normaliseer `rms` en `centroid` over de hele collectie (min-max naar 1 tot 10) en middel ze tot een energiewaarde. Doe dit relatief binnen de set, niet absoluut.
 
-## 5. (Niveau 3) Pro-set inspiratie
+## 5. Scene-kennis & pro-set inspiratie
 
-Als je internet hebt, mag je 1001tracklists of soortgelijke sites raadplegen om te kijken hoe ervaren DJ's tracks combineren. Gebruik dit als zachte hint: als twee tracks in jouw collectie vaak na elkaar in pro-sets opduiken, geef die overgang een kleine bonus. Laat het de harmonische en BPM-regels nooit overrulen.
+De duurzame kennis over hoe sets in dit genre (hard trance / hard house / house revival) écht zijn opgebouwd staat in **[references/scene-and-set-craft.md](references/scene-and-set-craft.md)** — setstructuur (golven), BPM-arcs, transitie- en selectiestijl, phrasing, energie vs tempo, en de scene zelf (Gigola, KI/KI, Benwal, Tjade, Marlon Hoffstadt e.a.). Lees dat referentiebestand als de gebruiker in dit genre zit; het is gebakken in de regels hierboven, dus je hebt er géén internet voor nodig.
+
+**Niveau 3 (als je internettoegang hebt):** ververs en verifieer. Bekijk recente sets (1001tracklists is vaak bot-geblokkeerd; set79.com en SoundCloud-tracklists werken wel) om te zien welke tracks/overgangen pro's nú combineren, en welke anthems als opener/closer terugkomen. Gebruik dit als zachte hint — als twee tracks uit jouw collectie vaak na elkaar in pro-sets staan, geef die overgang een kleine bonus. Laat het de energie-, BPM- en harmonie-afwegingen nooit overrulen.
 
 ## 6. Referentiescript (ordening op metadata)
 
 ```python
 import xml.etree.ElementTree as ET
 import re
+import math
 
 CAMELOT = {
     "Abm":"1A","G#m":"1A","Ebm":"2A","D#m":"2A","Bbm":"3A","A#m":"3A",
@@ -198,6 +199,8 @@ def target_energy(pos, total, shape="peak"):
     x = pos / max(1, total - 1)
     if shape == "warmup":   return 3 + 5 * x
     if shape == "closing":  return 9 - 4 * x
+    if shape == "wave":                       # stijgende basislijn met golven eroverheen
+        return min(10, 4 + 5 * x + 1.5 * math.sin(x * math.pi * 3))
     return 4 + 6 * (1 - abs(0.5 - x) * 2)     # peak-time boog
 
 def is_set_material(tr):
@@ -235,7 +238,8 @@ def load_tracks(xml_path, playlist=None, keep_ids=None, hygiene=True):
         })
     return tracks
 
-def order_set(tracks, shape="peak", w_harm=0.45, w_bpm=0.30, w_energy=0.25):
+def order_set(tracks, shape="peak", w_energy=0.40, w_bpm=0.30, w_harm=0.30):
+    # Energie/flow leiden; harmonie is de tiebreaker (niet andersom).
     remaining = tracks[:]
     # opener: laagste energie voor warm-up, anders middenmoot
     remaining.sort(key=lambda t: (t["energy"] or 5))
@@ -244,10 +248,18 @@ def order_set(tracks, shape="peak", w_harm=0.45, w_bpm=0.30, w_energy=0.25):
     while remaining:
         prev = ordered[-1]
         tgt = target_energy(len(ordered), total, shape)
+        # tel de hoog-energetische tracks die net achter elkaar stonden
+        run = 0
+        for t in reversed(ordered):
+            if (t["energy"] or 5) >= 8: run += 1
+            else: break
         def score(t):
-            s = (w_harm * harmonic_score(prev["camelot"], t["camelot"])
+            e = t["energy"] or 5
+            s = (w_energy * (1 - abs(e - tgt) / 10)
                  + w_bpm * bpm_score(prev["bpm"], t["bpm"])
-                 + w_energy * (1 - abs((t["energy"] or 5) - tgt) / 10))
+                 + w_harm * harmonic_score(prev["camelot"], t["camelot"]))
+            if run >= 2 and e >= 8:        # forceer een valley na 2 anthems op rij
+                s -= 0.5
             return s
         nxt = max(remaining, key=score)
         ordered.append(nxt)
@@ -255,13 +267,22 @@ def order_set(tracks, shape="peak", w_harm=0.45, w_bpm=0.30, w_energy=0.25):
     return ordered
 ```
 
-Het script is een startpunt. De wegingen (`w_harm`, `w_bpm`, `w_energy`) en de energieboog zijn bewust instelbaar, want de smaak van de DJ bepaalt uiteindelijk de mix.
+Het script is een startpunt. De wegingen (`w_energy`, `w_bpm`, `w_harm`), de energievorm (`peak`/`warmup`/`closing`/`wave`) en de valley-straf zijn bewust instelbaar, want de smaak van de DJ bepaalt uiteindelijk de mix. Voor dit genre is `shape="wave"` vaak passender dan één strakke boog (zie [references/scene-and-set-craft.md](references/scene-and-set-craft.md)).
 
 ## 7. Genre-specifiek (trance / hard house / house)
 
-- **Trance:** key-compatibiliteit weegt extra zwaar, want vocals en lange melodische breakdowns botsen hard bij een verkeerde toon. Plan breakdown -> build -> drop als ademhaling: zet niet drie volle anthems op rij. Uplifting trance rond 138, prog lager.
-- **Hard house:** hoge, vlakke energie. BPM-banen liggen dicht bij elkaar (145 tot 150), dus BPM-nabijheid is bijna altijd oke en harmonie + relentless drive worden bepalend. Houd de spanning hoog, maar plan een enkele dip zodat de piek erna landt.
-- **House:** breder en groovier, vooral geschikt voor warm-up en closing. Meer ruimte voor stemmingswissels via relatieve majeur/mineur. Laat de BPM hier de geleidelijke opbouw naar de hardere secties dragen.
+BPM-banden voor de moderne scene (richtlijn, niet absoluut): **house ~120-128, hardgroove ~135-145, (moderne/raw) trance ~140-150, hard house / bounce ~145-155, "pure" hard trance tot ~160-165**. Details + scene-context: [references/scene-and-set-craft.md](references/scene-and-set-craft.md).
+
+- **Trance (modern/hard):** key telt mee (vocals/melodische breakdowns botsen lelijk bij een verkeerde toon tijdens de blend), maar niet ten koste van flow. Plan breakdown -> build -> drop als ademhaling; zet geen drie volle anthems op rij. Open al stevig (geen trage warm-up) en bouw in golven naar ~150+; een bewuste curveball-spike mag.
+- **Hard house / bounce:** hoge, relatief vlakke energie, BPM dicht opeen (~145-155), dus BPM-nabijheid is bijna altijd oké en energie + relentless drive worden bepalend. Houd spanning hoog maar plan een enkele dip zodat de piek erna landt.
+- **House:** breder en groovier, vooral voor warm-up en closing. Meer ruimte voor stemmingswissels via relatieve majeur/mineur. Laat de BPM hier de geleidelijke opbouw dragen.
+
+**Geldt voor alle drie in deze revival-scene:**
+- **Edits/mashups/vocal-flips zijn eersterangs materiaal**, geen uitzondering — eurodance/pop-acapella over een harde instrumental is een kenmerkende move. Behandel "(Mixed)"/VIP/remix-versies als volwaardige set-tracks.
+- **Opener:** een eigen/herkenbare track of een vocal/eurodance-flip — geen trage opbouw.
+- **Closer:** een nostalgische **anthem one-two** in de laatste 1-2 slots (denk Sandstorm/Scooter/Rave Mozart/eurodance-classic).
+- **Clustering:** 2-3 opeenvolgende tracks van dezelfde producer of eigen catalogus is normaal en prima.
+- Bewaar de **hardste/VIP-versie** voor de piek, niet de opening.
 
 ## 8. Outputformaat
 
